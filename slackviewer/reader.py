@@ -123,7 +123,10 @@ class Reader(object):
         all_mpim_users = []
 
         for mpim in mpims:
-            mpim_members = {"name": mpim["name"], "users": [] if "members" not in mpim.keys() else [self.__USER_DATA[m] for m in mpim["members"]]}
+            try:
+                mpim_members = {"name": mpim["name"], "users": [] if "members" not in mpim.keys() else [self.__USER_DATA[m] for m in mpim["members"]]}
+            except KeyError:
+                continue
             all_mpim_users.append(mpim_members)
 
         return all_mpim_users
