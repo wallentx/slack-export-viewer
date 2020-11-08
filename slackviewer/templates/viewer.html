@@ -13,6 +13,15 @@
 <div id="slack-archive-viewer">
     {% if not no_sidebar %}
     <div id="sidebar">
+        <h3 id="channel-title">Search</h3>
+        <ul class="list">
+            <li>
+                <form action="/search">
+                    <input type="textbox" name="search">
+                    <input type="submit" value="Search">
+                </form>
+            </li>
+        </ul>
         <h3 id="channel-title">Public Channels</h3>
         <ul class="list" id="channel-list">
             {% for channel in channels %}
@@ -33,36 +42,24 @@
                 </li>
             {% endfor %}
         </ul>
-        <h3 id="dm-title">Direct Messages</h3>
-        <ul class="list" id="dms-list">
-            {% for dm in dm_users %}
-                <li class="dm{% if dm['id'] == id %} active{% endif %}">
-                    <a href="{{ url_for('dm_id', id=dm['id']) }}">
-                        &#128100; {{ dm["users"][0].real_name if dm["users"][0].real_name else dm["users"][0].name }}
-                        {% if dm["users"][1] %}, {{ dm["users"][1].real_name if dm["users"][1].real_name else dm["users"][1].name }}{% endif %}
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
-        <h3 id="mpim-title">Group Direct Messages</h3>
-        <ul class="list" id="mpims-list">
-            {% for mpim in mpim_users %}
-                <li class="mpim{% if mpim['name'] == name %} active{% endif %}">
-                    <a href="{{ url_for('mpim_name', name=mpim['name']) }}">
-                        &#128101;
-                        {% for user in mpim["users"] %}
-                        {{ user.real_name if user.real_name else user.name }},
-                        {% endfor %}
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
     </div>
     {% endif %}
     <div class="messages">
-        {% for message in messages %}
-            {{render_message(message, None, no_external_references)}}
-        {% endfor %}
+        {% if request.path == "/search" %}
+            <h1>Results for "{{query}}":</h1>
+            {% for channel in messages %}
+                {% if messages[channel] | length > 0 %}
+                    <h2>Channel #{{channel}}:</h1>
+                {% endif %}
+                {% for message in messages[channel] %}
+                    {{render_message(message, None, no_external_references)}}
+                {% endfor %}
+            {% endfor %}
+        {% else %}
+            {% for message in messages %}
+                {{render_message(message, None, no_external_references)}}
+            {% endfor %}
+        {% endif %}
     </div>
 </div>
 
@@ -86,22 +83,6 @@
   group_title.addEventListener('click', function() {
     group_title.classList.toggle('arrow');
     group_dropdown.classList.toggle('close');
-  });
-
-  // make dropdown from dm title
-  var dm_title = document.querySelector("#dm-title");
-  var dm_dropdown = document.querySelector("#dms-list");
-  dm_title.addEventListener('click', function() {
-    dm_title.classList.toggle('arrow');
-    dm_dropdown.classList.toggle('close');
-  });
-
-  // make dromdown from group dm title
-  var mpim_title = document.querySelector("#mpim-title");
-  var mpim_dropdown = document.querySelector("#mpims-list");
-  mpim_title.addEventListener('click', function() {
-    mpim_title.classList.toggle('arrow');
-    mpim_dropdown.classList.toggle('close');
   });
 })()
 </script>
