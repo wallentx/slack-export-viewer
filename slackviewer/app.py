@@ -1,5 +1,5 @@
 import flask
-
+import re
 
 app = flask.Flask(
     __name__,
@@ -10,6 +10,10 @@ app = flask.Flask(
 
 @app.route("/channel/<name>/")
 def channel_name(name):
+    all_messages = []
+    for channel in flask._app_ctx_stack.channels:
+        all_messages = all_messages + flask._app_ctx_stack.channels[channel]
+    print(len(all_messages))
     messages = flask._app_ctx_stack.channels[name]
     channels = list(flask._app_ctx_stack.channels.keys())
     groups = list(flask._app_ctx_stack.groups.keys()) if flask._app_ctx_stack.groups else {}
@@ -28,6 +32,10 @@ def channel_name(name):
 
 @app.route("/group/<name>/")
 def group_name(name):
+    all_messages = []
+    for group in flask._app_ctx_stack.groups:
+        all_messages = all_messages + flask._app_ctx_stack.groups[group]
+    print(len(all_messages))
     messages = flask._app_ctx_stack.groups[name]
     channels = list(flask._app_ctx_stack.channels.keys())
     groups = list(flask._app_ctx_stack.groups.keys())
@@ -43,6 +51,51 @@ def group_name(name):
                                  no_sidebar=app.no_sidebar,
                                  no_external_references=app.no_external_references)
 
+@app.route("/search")
+def search():
+    query = flask.request.args.get('search')
+    messages = {}
+    all_messages = {}
+    for channel in flask._app_ctx_stack.channels:
+        messages[channel] = []
+        for message in flask._app_ctx_stack.channels[channel]:
+            if(query.startswith('/')):
+                regex = re.compile(r'%s' % query[1:-1], re.IGNORECASE)
+                cleanr = re.compile('<.*?>')
+                cleantext = re.sub(cleanr, '', message.msg)
+                match = regex.search(cleantext)
+                if match is not None:
+                    messages[channel].append(message)
+            else:
+                if(query.lower() in message.msg.lower()):
+                    messages[channel].append(message)
+    for group in flask._app_ctx_stack.groups:
+        messages[group] = []
+        for message in flask._app_ctx_stack.groups[group]:
+            if(query.startswith('/')):
+                regex = re.compile(r'%s' % query[1:-1], re.IGNORECASE)
+                cleanr = re.compile('<.*?>')
+                cleantext = re.sub(cleanr, '', message.msg)
+                match = regex.search(cleantext)
+                if match is not None:
+                    messages[channel].append(message)
+            else:
+                if(query.lower() in message.msg.lower()):
+                    messages[group].append(message)
+    channels = list(flask._app_ctx_stack.channels.keys())
+    groups = list(flask._app_ctx_stack.groups.keys())
+    dm_users = list(flask._app_ctx_stack.dm_users)
+    mpim_users = list(flask._app_ctx_stack.mpim_users)
+
+    return flask.render_template("viewer.html", messages=messages,
+                                 query=query,
+                                 name="search",
+                                 channels=sorted(channels),
+                                 groups=sorted(groups),
+                                 dm_users=dm_users,
+                                 mpim_users=mpim_users,
+                                 no_sidebar=app.no_sidebar,
+                                 no_external_references=app.no_external_references)
 
 @app.route("/dm/<id>/")
 def dm_id(id):
