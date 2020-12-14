@@ -49,6 +49,8 @@ class SlackFormatter(object):
         user_id = message.get("user") or message.get("bot_id")
         if user_id in self.__USER_DATA:
             return self.__USER_DATA.get(user_id)
+        else:
+            return User({"name":message.get("user_profile").get("real_name")})
         logging.error("unable to find user in %s", message)
 
     def render_text(self, message, process_markdown=True):
